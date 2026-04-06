@@ -4,6 +4,7 @@
 <div class="mb-4">
     <h1 class="h3">Edit incident</h1>
     <p class="text-muted small">Incident ID: <code>{{ $incident->incident_code }}</code></p>
+    <p class="small mb-0"><span class="badge bg-danger">Administrator only</span> Full edit and delete are restricted to admins.</p>
 </div>
 
 <div class="card card-ertms">

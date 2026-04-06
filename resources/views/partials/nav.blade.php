@@ -15,7 +15,7 @@
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('incidents.index') || request()->routeIs('incidents.show') || request()->routeIs('incidents.edit') ? 'active' : '' }}" href="{{ route('incidents.index') }}">Incidents</a>
                 </li>
-                @if($u->isAdmin() || $u->isDispatcher())
+                @if($u->isAdmin() || $u->isStaff())
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('incidents.create') ? 'active' : '' }}" href="{{ route('incidents.create') }}">Create Incident</a>
                     </li>
@@ -33,6 +33,9 @@
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto">
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('profile.*') ? 'active' : '' }}" href="{{ route('profile.edit') }}">Profile</a>
+                </li>
                 <li class="nav-item dropdown">
                     <a class="nav-link dropdown-toggle text-white" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                         {{ $u->name }}

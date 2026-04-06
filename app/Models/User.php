@@ -15,11 +15,7 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
 
-    public const ROLE_DISPATCHER = 'dispatcher';
-
-    public const ROLE_TEAM_LEADER = 'team_leader';
-
-    public const ROLE_RESPONDER = 'responder';
+    public const ROLE_STAFF = 'staff';
 
     protected $fillable = [
         'name',
@@ -62,19 +58,9 @@ class User extends Authenticatable
         return $this->role === self::ROLE_ADMIN;
     }
 
-    public function isDispatcher(): bool
+    public function isStaff(): bool
     {
-        return $this->role === self::ROLE_DISPATCHER;
-    }
-
-    public function isTeamLeader(): bool
-    {
-        return $this->role === self::ROLE_TEAM_LEADER;
-    }
-
-    public function isResponder(): bool
-    {
-        return $this->role === self::ROLE_RESPONDER;
+        return $this->role === self::ROLE_STAFF;
     }
 
     public function isActive(): bool
@@ -82,13 +68,43 @@ class User extends Authenticatable
         return $this->status === 'active';
     }
 
+    /**
+     * Team IDs this user leads (assigned as team leader on teams table).
+     */
+    public function ledTeamIds(): \Illuminate\Support\Collection
+    {
+        return $this->ledTeams()->pluck('id');
+    }
+
+    /**
+     * All team IDs the user is associated with (leader or member).
+     */
+    public function associatedTeamIds(): \Illuminate\Support\Collection
+    {
+        return $this->ledTeamIds()
+            ->merge($this->teams()->pluck('teams.id'))
+            ->unique()
+            ->values();
+    }
+
+    public function isLeaderOfAssignedTeam(Incident $incident): bool
+    {
+        if (! $incident->relationLoaded('assignment')) {
+            $incident->load('assignment.team');
+        }
+
+        if (! $incident->assignment || ! $incident->assignment->team) {
+            return false;
+        }
+
+        return (int) $incident->assignment->team->team_leader_id === (int) $this->id;
+    }
+
     public static function roleLabels(): array
     {
         return [
-            self::ROLE_ADMIN => 'Admin',
-            self::ROLE_DISPATCHER => 'Dispatcher',
-            self::ROLE_TEAM_LEADER => 'Team Leader',
-            self::ROLE_RESPONDER => 'Responder',
+            self::ROLE_ADMIN => 'Administrator',
+            self::ROLE_STAFF => 'Staff',
         ];
     }
 }

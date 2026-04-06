@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Incident;
 use App\Models\IncidentReport;
-use App\Models\Team;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,11 +29,14 @@ class ReportController extends Controller
 
         $incidentTypes = Incident::query()->distinct()->orderBy('incident_type')->pluck('incident_type');
 
-        $stats = [
-            'total' => Incident::count(),
-            'closed' => Incident::where('status', Incident::STATUS_CLOSED)->count(),
-            'avg_response_minutes' => $this->averageResponseMinutes(),
-        ];
+        $stats = null;
+        if ($request->user()->isAdmin()) {
+            $stats = [
+                'total' => Incident::count(),
+                'closed' => Incident::where('status', Incident::STATUS_CLOSED)->count(),
+                'avg_response_minutes' => $this->averageResponseMinutes(),
+            ];
+        }
 
         return view('reports.index', [
             'title' => 'Reports — ERTMS',
@@ -47,10 +49,8 @@ class ReportController extends Controller
     public function create(Incident $incident): View|RedirectResponse
     {
         $user = auth()->user();
-        if ($user->isTeamLeader() && ! $user->isAdmin()) {
-            $teamIds = Team::where('team_leader_id', $user->id)->pluck('id');
-            $ok = $incident->assignment && in_array($incident->assignment->team_id, $teamIds->all(), true);
-            abort_unless($ok, 403);
+        if ($user->isStaff() && ! $user->isAdmin()) {
+            abort_unless($user->isLeaderOfAssignedTeam($incident), 403);
         }
 
         if ($incident->reports()->exists()) {
@@ -72,10 +72,8 @@ class ReportController extends Controller
     public function store(Request $request, Incident $incident): RedirectResponse
     {
         $user = $request->user();
-        if ($user->isTeamLeader() && ! $user->isAdmin()) {
-            $teamIds = Team::where('team_leader_id', $user->id)->pluck('id');
-            $ok = $incident->assignment && in_array($incident->assignment->team_id, $teamIds->all(), true);
-            abort_unless($ok, 403);
+        if ($user->isStaff() && ! $user->isAdmin()) {
+            abort_unless($user->isLeaderOfAssignedTeam($incident), 403);
         }
 
         if ($incident->reports()->exists()) {

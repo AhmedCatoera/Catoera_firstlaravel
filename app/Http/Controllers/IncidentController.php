@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Assignment;
 use App\Models\Incident;
 use App\Models\Team;
-use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -17,12 +15,11 @@ class IncidentController extends Controller
         $user = $request->user();
         $query = Incident::with(['creator', 'assignment.team']);
 
-        if ($user->isTeamLeader()) {
-            $teamIds = Team::where('team_leader_id', $user->id)->pluck('id');
-            $query->whereHas('assignment', fn ($q) => $q->whereIn('team_id', $teamIds));
-        } elseif ($user->isResponder()) {
-            $teamIds = $user->teams()->pluck('teams.id');
-            $query->whereHas('assignment', fn ($q) => $q->whereIn('team_id', $teamIds));
+        if ($user->isStaff()) {
+            $teamIds = $user->associatedTeamIds();
+            if ($teamIds->isNotEmpty()) {
+                $query->whereHas('assignment', fn ($q) => $q->whereIn('team_id', $teamIds));
+            }
         }
 
         if ($request->filled('status')) {
@@ -70,19 +67,16 @@ class IncidentController extends Controller
         $incident->load(['creator', 'assignment.team.leader', 'reports.submitter']);
         $user = auth()->user();
 
-        if ($user->isTeamLeader() && ! $user->isAdmin()) {
-            $teamIds = Team::where('team_leader_id', $user->id)->pluck('id');
-            $assigned = $incident->assignment && in_array($incident->assignment->team_id, $teamIds->all(), true);
-            abort_unless($assigned, 403);
-        }
-        if ($user->isResponder()) {
-            $teamIds = $user->teams()->pluck('teams.id');
-            $assigned = $incident->assignment && in_array($incident->assignment->team_id, $teamIds->all(), true);
-            abort_unless($assigned, 403);
+        if ($user->isStaff() && ! $user->isAdmin()) {
+            $teamIds = $user->associatedTeamIds();
+            if ($teamIds->isNotEmpty()) {
+                $assigned = $incident->assignment && in_array($incident->assignment->team_id, $teamIds->all(), true);
+                abort_unless($assigned, 403);
+            }
         }
 
         $teamsForAssign = collect();
-        if (($user->isAdmin() || $user->isDispatcher()) && $incident->status === Incident::STATUS_PENDING) {
+        if (($user->isAdmin() || $user->isStaff()) && $incident->status === Incident::STATUS_PENDING) {
             $teamsForAssign = Team::with('leader')->where('availability_status', 'available')->orderBy('team_name')->get();
         }
 
@@ -127,10 +121,8 @@ class IncidentController extends Controller
     {
         $user = $request->user();
 
-        if ($user->isTeamLeader() && ! $user->isAdmin()) {
-            $teamIds = Team::where('team_leader_id', $user->id)->pluck('id');
-            $ok = $incident->assignment && in_array($incident->assignment->team_id, $teamIds->all(), true);
-            abort_unless($ok, 403);
+        if ($user->isStaff() && ! $user->isAdmin()) {
+            abort_unless($user->isLeaderOfAssignedTeam($incident), 403);
         }
 
         $validated = $request->validate([

@@ -9,9 +9,6 @@ use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
         $admin = User::query()->create([
@@ -22,36 +19,36 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        $dispatcher = User::query()->create([
-            'name' => 'Case Dispatcher',
-            'email' => 'dispatcher@ertms.test',
+        $staffDispatch = User::query()->create([
+            'name' => 'Operations Staff',
+            'email' => 'staff.dispatch@ertms.test',
             'password' => Hash::make('password'),
-            'role' => User::ROLE_DISPATCHER,
+            'role' => User::ROLE_STAFF,
             'status' => 'active',
         ]);
 
-        $leader = User::query()->create([
-            'name' => 'Team Leader One',
-            'email' => 'leader@ertms.test',
+        $staffLeader = User::query()->create([
+            'name' => 'Team Leader (Staff)',
+            'email' => 'staff.leader@ertms.test',
             'password' => Hash::make('password'),
-            'role' => User::ROLE_TEAM_LEADER,
+            'role' => User::ROLE_STAFF,
             'status' => 'active',
         ]);
 
-        $responder = User::query()->create([
-            'name' => 'Responder One',
-            'email' => 'responder@ertms.test',
+        $staffResponder = User::query()->create([
+            'name' => 'Field Responder (Staff)',
+            'email' => 'staff.field@ertms.test',
             'password' => Hash::make('password'),
-            'role' => User::ROLE_RESPONDER,
+            'role' => User::ROLE_STAFF,
             'status' => 'active',
         ]);
 
         $team = Team::query()->create([
             'team_name' => 'Alpha Response Unit',
             'availability_status' => 'available',
-            'team_leader_id' => $leader->id,
+            'team_leader_id' => $staffLeader->id,
         ]);
 
-        $team->members()->syncWithoutDetaching([$responder->id, $leader->id]);
+        $team->members()->syncWithoutDetaching([$staffResponder->id, $staffLeader->id]);
     }
 }

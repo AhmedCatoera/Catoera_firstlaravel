@@ -6,28 +6,34 @@
     <p class="text-muted small mb-0">Submitted resolution reports and incident statistics.</p>
 </div>
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card card-ertms p-3">
-            <div class="text-muted small">Total incidents</div>
-            <div class="fs-4 fw-semibold">{{ $stats['total'] }}</div>
+@if($stats)
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card card-ertms p-3">
+                <div class="text-muted small">Total incidents</div>
+                <div class="fs-4 fw-semibold">{{ $stats['total'] }}</div>
+            </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card card-ertms p-3">
-            <div class="text-muted small">Closed incidents</div>
-            <div class="fs-4 fw-semibold">{{ $stats['closed'] }}</div>
+        <div class="col-md-4">
+            <div class="card card-ertms p-3">
+                <div class="text-muted small">Closed incidents</div>
+                <div class="fs-4 fw-semibold">{{ $stats['closed'] }}</div>
+            </div>
         </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card card-ertms p-3">
-            <div class="text-muted small">Avg. response time (reported → en route)</div>
-            <div class="fs-4 fw-semibold">
-                {{ $stats['avg_response_minutes'] !== null ? $stats['avg_response_minutes'].' min' : '—' }}
+        <div class="col-md-4">
+            <div class="card card-ertms p-3">
+                <div class="text-muted small">Avg. response time (reported → en route)</div>
+                <div class="fs-4 fw-semibold">
+                    {{ $stats['avg_response_minutes'] !== null ? $stats['avg_response_minutes'].' min' : '—' }}
+                </div>
             </div>
         </div>
     </div>
-</div>
+@else
+    <div class="alert alert-info small mb-4" role="status">
+        Aggregate analytics on this page are visible to <strong>Administrators</strong> only. You can still browse submitted resolution reports below.
+    </div>
+@endif
 
 <form method="get" action="{{ route('reports.index') }}" class="row g-2 mb-3 align-items-end">
     <div class="col-md-3">

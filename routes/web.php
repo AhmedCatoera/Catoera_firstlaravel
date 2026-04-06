@@ -1,10 +1,10 @@
 <?php
 
 use App\Http\Controllers\AssignmentController;
-use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\LandingController;
 use App\Http\Controllers\IncidentController;
+use App\Http\Controllers\LandingController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\TeamController;
 use App\Http\Controllers\UserManagementController;
@@ -12,26 +12,18 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
 
-Route::middleware('guest')->group(function () {
-    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
-});
-
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
-
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
 
-    Route::middleware('role:admin,dispatcher')->group(function () {
+    Route::middleware('role:admin,staff')->group(function () {
         Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
         Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
     });
 
     Route::post('/incidents/{incident}/assign', [AssignmentController::class, 'store'])
-        ->middleware('role:admin,dispatcher')
+        ->middleware('role:admin,staff')
         ->name('assignments.store');
 
     Route::get('/incidents/{incident}', [IncidentController::class, 'show'])->name('incidents.show');
@@ -41,6 +33,7 @@ Route::middleware('auth')->group(function () {
         Route::put('/incidents/{incident}', [IncidentController::class, 'update'])->name('incidents.update');
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy'])->name('incidents.destroy');
         Route::post('/incidents/{incident}/close', [IncidentController::class, 'close'])->name('incidents.close');
+        Route::get('/incidents/{incident}/export-pdf', [ReportController::class, 'pdfIncident'])->name('incidents.export-pdf');
 
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
@@ -56,15 +49,20 @@ Route::middleware('auth')->group(function () {
         Route::delete('/teams/{team}', [TeamController::class, 'destroy'])->name('teams.destroy');
     });
 
-    Route::middleware('role:admin,team_leader')->group(function () {
+    Route::middleware('role:admin,staff')->group(function () {
         Route::patch('/incidents/{incident}/status', [IncidentController::class, 'updateStatus'])->name('incidents.status');
     });
 
-    Route::middleware('role:admin,team_leader')->group(function () {
+    Route::middleware('role:admin,staff')->group(function () {
         Route::get('/incidents/{incident}/report/create', [ReportController::class, 'create'])->name('reports.create');
         Route::post('/incidents/{incident}/report', [ReportController::class, 'store'])->name('reports.store');
     });
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-    Route::get('/incidents/{incident}/export-pdf', [ReportController::class, 'pdfIncident'])->name('incidents.export-pdf');
+
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+require __DIR__.'/auth.php';

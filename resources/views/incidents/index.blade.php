@@ -6,7 +6,7 @@
         <h1 class="h3 mb-0">Incidents</h1>
         <p class="text-muted small mb-0">View and manage emergency incidents.</p>
     </div>
-    @if(auth()->user()->isAdmin() || auth()->user()->isDispatcher())
+    @if(auth()->user()->isAdmin() || auth()->user()->isStaff())
         <a href="{{ route('incidents.create') }}" class="btn btn-danger">Create incident</a>
     @endif
 </div>

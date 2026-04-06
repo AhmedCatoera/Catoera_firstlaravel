@@ -15,8 +15,8 @@
     <div class="d-flex flex-wrap gap-2">
         @if($u->isAdmin())
             <a href="{{ route('incidents.edit', $incident) }}" class="btn btn-outline-primary btn-sm">Edit</a>
+            <a href="{{ route('incidents.export-pdf', $incident) }}" class="btn btn-outline-secondary btn-sm">Export PDF</a>
         @endif
-        <a href="{{ route('incidents.export-pdf', $incident) }}" class="btn btn-outline-secondary btn-sm">Export PDF</a>
     </div>
 </div>
 
@@ -71,7 +71,7 @@
             </div>
         @endif
 
-        @if(($u->isAdmin() || $u->isDispatcher()) && $incident->status === \App\Models\Incident::STATUS_PENDING && $teamsForAssign->isNotEmpty())
+        @if(($u->isAdmin() || $u->isStaff()) && $incident->status === \App\Models\Incident::STATUS_PENDING && $teamsForAssign->isNotEmpty())
             <div class="card card-ertms mb-3 border-danger">
                 <div class="card-body">
                     <h2 class="h6">Assign team</h2>
@@ -90,7 +90,7 @@
             </div>
         @endif
 
-        @if(($u->isAdmin() || ($u->isTeamLeader() && $incident->assignment && $incident->assignment->team->team_leader_id === $u->id)) && in_array($incident->status, [\App\Models\Incident::STATUS_ASSIGNED, \App\Models\Incident::STATUS_EN_ROUTE, \App\Models\Incident::STATUS_ON_SCENE], true))
+        @if(($u->isAdmin() || $u->isLeaderOfAssignedTeam($incident)) && in_array($incident->status, [\App\Models\Incident::STATUS_ASSIGNED, \App\Models\Incident::STATUS_EN_ROUTE, \App\Models\Incident::STATUS_ON_SCENE], true))
             <div class="card card-ertms mb-3">
                 <div class="card-body">
                     <h2 class="h6">Update response status</h2>
@@ -117,7 +117,7 @@
             </div>
         @endif
 
-        @if(($u->isAdmin() || ($u->isTeamLeader() && $incident->assignment && $incident->assignment->team->team_leader_id === $u->id)) && ! $incident->reports->count() && in_array($incident->status, [\App\Models\Incident::STATUS_ASSIGNED, \App\Models\Incident::STATUS_EN_ROUTE, \App\Models\Incident::STATUS_ON_SCENE], true))
+        @if(($u->isAdmin() || $u->isLeaderOfAssignedTeam($incident)) && ! $incident->reports->count() && in_array($incident->status, [\App\Models\Incident::STATUS_ASSIGNED, \App\Models\Incident::STATUS_EN_ROUTE, \App\Models\Incident::STATUS_ON_SCENE], true))
             <div class="card card-ertms mb-3">
                 <div class="card-body">
                     <h2 class="h6">Resolution</h2>

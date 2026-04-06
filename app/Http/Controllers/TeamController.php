@@ -22,12 +22,12 @@ class TeamController extends Controller
 
     public function create(): View
     {
-        $leaders = User::where('role', User::ROLE_TEAM_LEADER)
+        $leaders = User::where('role', User::ROLE_STAFF)
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
-        $responders = User::whereIn('role', [User::ROLE_RESPONDER, User::ROLE_TEAM_LEADER])
+        $responders = User::where('role', User::ROLE_STAFF)
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
@@ -63,12 +63,12 @@ class TeamController extends Controller
 
     public function edit(Team $team): View
     {
-        $leaders = User::where('role', User::ROLE_TEAM_LEADER)
+        $leaders = User::where('role', User::ROLE_STAFF)
             ->where('status', 'active')
             ->orderBy('name')
             ->get();
 
-        $responders = User::whereIn('role', [User::ROLE_RESPONDER, User::ROLE_TEAM_LEADER])
+        $responders = User::where('role', User::ROLE_STAFF)
             ->where('status', 'active')
             ->orderBy('name')
             ->get();

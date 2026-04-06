@@ -69,7 +69,7 @@
     </div>
 </div>
 
-@if($user->isDispatcher() || $user->isAdmin())
+@if($user->isStaff() || $user->isAdmin())
     <div class="mt-3">
         <a href="{{ route('incidents.create') }}" class="btn btn-danger">Create incident</a>
     </div>

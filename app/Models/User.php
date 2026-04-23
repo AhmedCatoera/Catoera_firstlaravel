@@ -15,6 +15,8 @@ class User extends Authenticatable
 
     public const ROLE_ADMIN = 'admin';
 
+    public const ROLE_DISPATCHER = 'dispatcher';
+
     public const ROLE_STAFF = 'staff';
 
     protected $fillable = [
@@ -63,6 +65,11 @@ class User extends Authenticatable
         return $this->role === self::ROLE_STAFF;
     }
 
+    public function isDispatcher(): bool
+    {
+        return $this->role === self::ROLE_DISPATCHER;
+    }
+
     public function isActive(): bool
     {
         return $this->status === 'active';
@@ -104,6 +111,7 @@ class User extends Authenticatable
     {
         return [
             self::ROLE_ADMIN => 'Administrator',
+            self::ROLE_DISPATCHER => 'Dispatcher',
             self::ROLE_STAFF => 'Staff',
         ];
     }

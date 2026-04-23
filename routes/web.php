@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AssignmentController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\IncidentAttachmentController;
+use App\Http\Controllers\IncidentCommandController;
 use App\Http\Controllers\IncidentController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\ProfileController;
@@ -12,21 +14,24 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/', [LandingController::class, 'index'])->name('home');
 
-Route::middleware(['auth', 'role:admin,staff'])->group(function () {
+Route::middleware(['auth', 'role:admin,dispatcher,staff'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/incidents', [IncidentController::class, 'index'])->name('incidents.index');
 
-    Route::middleware('role:admin,staff')->group(function () {
+    Route::middleware('role:admin,dispatcher')->group(function () {
         Route::get('/incidents/create', [IncidentController::class, 'create'])->name('incidents.create');
         Route::post('/incidents', [IncidentController::class, 'store'])->name('incidents.store');
     });
 
     Route::post('/incidents/{incident}/assign', [AssignmentController::class, 'store'])
-        ->middleware('role:admin,staff')
+        ->middleware('role:admin,dispatcher')
         ->name('assignments.store');
 
     Route::get('/incidents/{incident}', [IncidentController::class, 'show'])->name('incidents.show');
+    Route::get('/incidents/{incident}/print-summary', [IncidentCommandController::class, 'printableSummary'])->name('incidents.print-summary');
+    Route::post('/incidents/{incident}/attachments', [IncidentAttachmentController::class, 'store'])->name('incidents.attachments.store');
+    Route::get('/incidents/{incident}/attachments/{attachment}/download', [IncidentAttachmentController::class, 'download'])->name('incidents.attachments.download');
 
     Route::middleware('role:admin')->group(function () {
         Route::get('/incidents/{incident}/edit', [IncidentController::class, 'edit'])->name('incidents.edit');
@@ -34,6 +39,7 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
         Route::delete('/incidents/{incident}', [IncidentController::class, 'destroy'])->name('incidents.destroy');
         Route::post('/incidents/{incident}/close', [IncidentController::class, 'close'])->name('incidents.close');
         Route::get('/incidents/{incident}/export-pdf', [ReportController::class, 'pdfIncident'])->name('incidents.export-pdf');
+        Route::delete('/incidents/{incident}/attachments/{attachment}', [IncidentAttachmentController::class, 'destroy'])->name('incidents.attachments.destroy');
 
         Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');
         Route::get('/users/create', [UserManagementController::class, 'create'])->name('users.create');
@@ -59,6 +65,8 @@ Route::middleware(['auth', 'role:admin,staff'])->group(function () {
     });
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/operations/board', [IncidentController::class, 'board'])->name('operations.board');
+    Route::get('/operations/board/data', [IncidentController::class, 'boardData'])->name('operations.board.data');
 
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

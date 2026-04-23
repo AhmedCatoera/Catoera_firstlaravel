@@ -4,7 +4,7 @@
 <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
     <div>
         <h1 class="h3 mb-0">Users</h1>
-        <p class="text-muted small mb-0">Role-based accounts (Admin, Dispatcher, Team Leader, Responder).</p>
+        <p class="text-muted small mb-0">Role-based accounts (Admin, Dispatcher, Staff).</p>
     </div>
     <a href="{{ route('users.create') }}" class="btn btn-danger">Add user</a>
 </div>

@@ -23,7 +23,7 @@ class EnsureRole
         }
 
         if (! in_array($request->user()->role, $allowed, true)) {
-            abort(403, 'You are not authorized to access this resource.');
+            return redirect()->route('dashboard')->with('error', 'You are not allowed to access that page.');
         }
 
         return $next($request);

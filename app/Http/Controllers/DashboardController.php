@@ -23,6 +23,22 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        $statusBreakdown = [
+            'pending' => Incident::where('status', Incident::STATUS_PENDING)->count(),
+            'assigned' => Incident::where('status', Incident::STATUS_ASSIGNED)->count(),
+            'en_route' => Incident::where('status', Incident::STATUS_EN_ROUTE)->count(),
+            'on_scene' => Incident::where('status', Incident::STATUS_ON_SCENE)->count(),
+            'resolved' => Incident::where('status', Incident::STATUS_RESOLVED)->count(),
+            'closed' => Incident::where('status', Incident::STATUS_CLOSED)->count(),
+        ];
+
+        $incidentTypeStats = Incident::query()
+            ->selectRaw('incident_type, COUNT(*) as aggregate')
+            ->groupBy('incident_type')
+            ->orderByDesc('aggregate')
+            ->limit(6)
+            ->get();
+
         return view('dashboard.index', [
             'title' => 'Dashboard — ERTMS',
             'user' => $user,
@@ -31,6 +47,8 @@ class DashboardController extends Controller
             'availableTeams' => $availableTeams,
             'totalUsers' => $totalUsers,
             'recentIncidents' => $recentIncidents,
+            'statusBreakdown' => $statusBreakdown,
+            'incidentTypeStats' => $incidentTypeStats,
         ]);
     }
 }

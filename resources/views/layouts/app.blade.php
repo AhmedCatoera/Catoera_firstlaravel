@@ -14,8 +14,8 @@
         @include('partials.nav')
     @endauth
 
-    <main class="flex-grow-1 py-4">
-        <div class="container">
+    <main class="flex-grow-1 py-4 ertms-main">
+        <div class="container ertms-container">
             @include('partials.flash')
             @yield('content')
         </div>

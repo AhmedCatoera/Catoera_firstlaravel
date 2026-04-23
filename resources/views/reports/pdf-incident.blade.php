@@ -14,9 +14,10 @@
 <body>
     <h1>ERTMS — Incident report</h1>
     <p><strong>Incident ID:</strong> {{ $incident->incident_code }}</p>
-    <p><strong>Type:</strong> {{ $incident->incident_type }} &nbsp;|&nbsp; <strong>Severity:</strong> {{ $incident->severity_level }}</p>
+    <p><strong>Type:</strong> {{ $incident->incident_type }}</p>
     <p><strong>Status:</strong> {{ $incident->status }}</p>
     <p><strong>Location:</strong> {{ $incident->location }}</p>
+    <p><strong>Coordinates:</strong> {{ $incident->latitude ? number_format($incident->latitude, 7).', '.number_format($incident->longitude, 7) : 'Not captured' }}</p>
     <p><strong>Description:</strong><br>{{ $incident->description }}</p>
 
     <table>
@@ -34,9 +35,13 @@
 
     @foreach($incident->reports as $rep)
         <h2 style="margin-top:16px;font-size:14px;">Resolution report</h2>
-        <p>{{ $rep->resolution_details }}</p>
+        <p style="white-space: pre-line;">{{ $rep->resolution_details }}</p>
+        <p><strong>Outcome:</strong> {{ \App\Models\IncidentReport::outcomeLabels()[$rep->resolution_outcome] ?? '—' }}</p>
+        <p><strong>Operations Category:</strong> {{ \App\Models\IncidentReport::operationsCategories()[$rep->operations_category] ?? '—' }}</p>
+        <p><strong>Effectiveness:</strong> {{ \App\Models\IncidentReport::effectivenessLabels()[$rep->response_effectiveness] ?? '—' }}</p>
         <p><strong>Casualties:</strong> {{ $rep->casualties ?? '—' }}</p>
         <p><strong>Damage:</strong> {{ $rep->damage_assessment ?? '—' }}</p>
+        <p><strong>Photos attached:</strong> {{ $rep->attachments->count() }}</p>
     @endforeach
 </body>
 </html>

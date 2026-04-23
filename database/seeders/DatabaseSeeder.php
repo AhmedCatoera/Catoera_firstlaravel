@@ -19,11 +19,11 @@ class DatabaseSeeder extends Seeder
             'status' => 'active',
         ]);
 
-        $staffDispatch = User::query()->create([
-            'name' => 'Operations Staff',
-            'email' => 'staff.dispatch@ertms.test',
+        $dispatcher = User::query()->create([
+            'name' => 'Operations Dispatcher',
+            'email' => 'dispatcher@ertms.test',
             'password' => Hash::make('password'),
-            'role' => User::ROLE_STAFF,
+            'role' => User::ROLE_DISPATCHER,
             'status' => 'active',
         ]);
 

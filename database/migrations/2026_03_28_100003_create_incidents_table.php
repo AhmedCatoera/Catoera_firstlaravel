@@ -13,8 +13,9 @@ return new class extends Migration
             $table->string('incident_code')->nullable()->unique();
             $table->string('incident_type');
             $table->string('location');
+            $table->decimal('latitude', 10, 7)->nullable();
+            $table->decimal('longitude', 10, 7)->nullable();
             $table->text('description');
-            $table->string('severity_level', 32);
             $table->timestamp('date_reported')->useCurrent();
             $table->string('status', 32)->default('pending');
             $table->text('notes')->nullable();

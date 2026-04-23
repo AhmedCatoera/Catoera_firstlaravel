@@ -35,29 +35,33 @@
     </div>
 @endif
 
-<form method="get" action="{{ route('reports.index') }}" class="row g-2 mb-3 align-items-end">
-    <div class="col-md-3">
-        <label class="form-label small mb-0" for="from">From</label>
-        <input type="date" name="from" id="from" class="form-control form-control-sm" value="{{ request('from') }}">
+<div class="card card-ertms mb-3">
+    <div class="card-body">
+        <form method="get" action="{{ route('reports.index') }}" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small mb-0" for="from">From</label>
+                <input type="date" name="from" id="from" class="form-control form-control-sm" value="{{ request('from') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-0" for="to">To</label>
+                <input type="date" name="to" id="to" class="form-control form-control-sm" value="{{ request('to') }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small mb-0" for="incident_type">Incident type</label>
+                <select name="incident_type" id="incident_type" class="form-select form-select-sm">
+                    <option value="">All types</option>
+                    @foreach($incidentTypes as $t)
+                        <option value="{{ $t }}" @selected(request('incident_type') === $t)>{{ $t }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-sm btn-danger">Filter</button>
+                <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
+            </div>
+        </form>
     </div>
-    <div class="col-md-3">
-        <label class="form-label small mb-0" for="to">To</label>
-        <input type="date" name="to" id="to" class="form-control form-control-sm" value="{{ request('to') }}">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label small mb-0" for="incident_type">Incident type</label>
-        <select name="incident_type" id="incident_type" class="form-select form-select-sm">
-            <option value="">All types</option>
-            @foreach($incidentTypes as $t)
-                <option value="{{ $t }}" @selected(request('incident_type') === $t)>{{ $t }}</option>
-            @endforeach
-        </select>
-    </div>
-    <div class="col-md-3">
-        <button type="submit" class="btn btn-sm btn-danger">Filter</button>
-        <a href="{{ route('reports.index') }}" class="btn btn-sm btn-outline-secondary">Reset</a>
-    </div>
-</form>
+</div>
 
 <div class="card card-ertms">
     <div class="table-responsive">
@@ -65,6 +69,8 @@
             <thead class="table-light">
                 <tr>
                     <th>Incident</th>
+                    <th>Status</th>
+                    <th>Category</th>
                     <th>Submitted</th>
                     <th>By</th>
                     <th>Summary</th>
@@ -77,12 +83,22 @@
                             <a href="{{ route('incidents.show', $rep->incident) }}">{{ $rep->incident->incident_code }}</a>
                             <div class="text-muted small">{{ $rep->incident->incident_type }}</div>
                         </td>
+                        <td>{{ \App\Models\Incident::statusLabels()[$rep->incident->status] ?? $rep->incident->status }}</td>
+                        <td>
+                            <div class="small">{{ \App\Models\IncidentReport::operationsCategories()[$rep->operations_category] ?? '—' }}</div>
+                            <div class="text-muted small">{{ \App\Models\IncidentReport::outcomeLabels()[$rep->resolution_outcome] ?? '—' }}</div>
+                        </td>
                         <td>{{ $rep->date_submitted?->format('M j, Y H:i') }}</td>
                         <td>{{ $rep->submitter->name ?? '—' }}</td>
-                        <td>{{ str($rep->resolution_details)->limit(80) }}</td>
+                        <td>
+                            {{ str($rep->resolution_details)->limit(70) }}
+                            @if($rep->attachments->count())
+                                <div class="text-muted small">{{ $rep->attachments->count() }} photo(s)</div>
+                            @endif
+                        </td>
                     </tr>
                 @empty
-                    <tr><td colspan="4" class="text-center text-muted py-4">No reports match your filters.</td></tr>
+                    <tr><td colspan="6" class="text-center text-muted py-4">No reports match your filters.</td></tr>
                 @endforelse
             </tbody>
         </table>

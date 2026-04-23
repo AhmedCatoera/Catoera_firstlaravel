@@ -13,6 +13,7 @@
         </p>
     </div>
     <div class="d-flex flex-wrap gap-2">
+        <a href="{{ route('incidents.print-summary', $incident) }}" class="btn btn-outline-dark btn-sm" target="_blank">Print Summary</a>
         @if($u->isAdmin())
             <a href="{{ route('incidents.edit', $incident) }}" class="btn btn-outline-primary btn-sm">Edit</a>
             <a href="{{ route('incidents.export-pdf', $incident) }}" class="btn btn-outline-secondary btn-sm">Export PDF</a>
@@ -27,13 +28,22 @@
                 <h2 class="h6 text-uppercase text-muted">Details</h2>
                 <dl class="row mb-0 small">
                     <dt class="col-sm-3">Type</dt><dd class="col-sm-9">{{ $incident->incident_type }}</dd>
-                    <dt class="col-sm-3">Severity</dt><dd class="col-sm-9"><span class="badge badge-severity-{{ $incident->severity_level }}">{{ $incident->severity_level }}</span></dd>
                     <dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ $statusLabels[$incident->status] ?? $incident->status }}</dd>
                     <dt class="col-sm-3">Location</dt><dd class="col-sm-9">{{ $incident->location }}</dd>
+                    <dt class="col-sm-3">Coordinates</dt><dd class="col-sm-9">{{ $incident->latitude ? number_format($incident->latitude, 7).', '.number_format($incident->longitude, 7) : 'Not captured' }}</dd>
                     <dt class="col-sm-3">Description</dt><dd class="col-sm-9">{{ $incident->description }}</dd>
                 </dl>
             </div>
         </div>
+
+        @if($incident->latitude && $incident->longitude)
+            <div class="card card-ertms mb-3">
+                <div class="card-body">
+                    <h2 class="h6 text-uppercase text-muted">Incident map</h2>
+                    <div id="incidentMapView" class="incident-map rounded border"></div>
+                </div>
+            </div>
+        @endif
 
         <div class="card card-ertms mb-3">
             <div class="card-body">
@@ -44,6 +54,28 @@
                     <li><strong>On scene:</strong> {{ $incident->on_scene_at?->toDateTimeString() ?? '—' }}</li>
                     <li><strong>Resolved:</strong> {{ $incident->resolved_at?->toDateTimeString() ?? '—' }}</li>
                     <li><strong>Closed:</strong> {{ $incident->closed_at?->toDateTimeString() ?? '—' }}</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card card-ertms mb-3">
+            <div class="card-body">
+                <h2 class="h6 text-uppercase text-muted">Activity log</h2>
+                <ul class="list-unstyled mb-0">
+                    @forelse($incident->activities as $activity)
+                        <li class="activity-item pb-2 mb-2 border-bottom">
+                            <div class="d-flex justify-content-between small">
+                                <span class="fw-semibold">{{ str($activity->event)->replace('_', ' ')->title() }}</span>
+                                <span class="text-muted">{{ $activity->created_at?->format('M j, Y H:i') }}</span>
+                            </div>
+                            @if($activity->details)
+                                <div class="small text-muted">{{ $activity->details }}</div>
+                            @endif
+                            <div class="small">By: {{ $activity->actor->name ?? 'System' }}</div>
+                        </li>
+                    @empty
+                        <li class="small text-muted">No activities recorded yet.</li>
+                    @endforelse
                 </ul>
             </div>
         </div>
@@ -71,7 +103,41 @@
             </div>
         @endif
 
-        @if(($u->isAdmin() || $u->isStaff()) && $incident->status === \App\Models\Incident::STATUS_PENDING && $teamsForAssign->isNotEmpty())
+        <div class="card card-ertms mb-3">
+            <div class="card-body">
+                <h2 class="h6 text-uppercase text-muted">Attachments</h2>
+                <form method="post" action="{{ route('incidents.attachments.store', $incident) }}" enctype="multipart/form-data" class="mb-3">
+                    @csrf
+                    <input type="file" name="attachment" class="form-control form-control-sm mb-2" required>
+                    <button type="submit" class="btn btn-outline-primary btn-sm w-100">Upload Attachment</button>
+                    <div class="form-text">Allowed: PDF, image, DOC/DOCX, XLS/XLSX, TXT (max 5MB).</div>
+                </form>
+                <ul class="list-group list-group-flush">
+                    @forelse($incident->attachments as $attachment)
+                        <li class="list-group-item px-0 d-flex justify-content-between align-items-start gap-2">
+                            <div class="small">
+                                <div class="fw-semibold">{{ $attachment->original_name }}</div>
+                                <div class="text-muted">{{ number_format(($attachment->file_size ?? 0)/1024, 1) }} KB · {{ $attachment->uploader->name ?? 'Unknown' }}</div>
+                            </div>
+                            <div class="d-flex gap-1">
+                                <a href="{{ route('incidents.attachments.download', [$incident, $attachment]) }}" class="btn btn-sm btn-outline-secondary">Download</a>
+                                @if($u->isAdmin())
+                                    <form method="post" action="{{ route('incidents.attachments.destroy', [$incident, $attachment]) }}" onsubmit="return confirm('Delete this attachment?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                    </form>
+                                @endif
+                            </div>
+                        </li>
+                    @empty
+                        <li class="list-group-item px-0 small text-muted">No attachments uploaded.</li>
+                    @endforelse
+                </ul>
+            </div>
+        </div>
+
+        @if(($u->isAdmin() || $u->isDispatcher()) && $incident->status === \App\Models\Incident::STATUS_PENDING && $teamsForAssign->isNotEmpty())
             <div class="card card-ertms mb-3 border-danger">
                 <div class="card-body">
                     <h2 class="h6">Assign team</h2>
@@ -147,9 +213,24 @@
             <div class="card card-ertms mb-3">
                 <div class="card-body">
                     <h2 class="h6 text-uppercase text-muted">Resolution report</h2>
-                    <p class="small mb-1">{{ $rep->resolution_details }}</p>
+                    <p class="small mb-1" style="white-space: pre-line;">{{ $rep->resolution_details }}</p>
                     <p class="small mb-0"><strong>Casualties:</strong> {{ $rep->casualties ?? 'None reported' }}</p>
                     <p class="small"><strong>Damage:</strong> {{ $rep->damage_assessment ?? '—' }}</p>
+                    @if($rep->follow_up_actions)
+                        <p class="small"><strong>Follow-up:</strong> {{ $rep->follow_up_actions }}</p>
+                    @endif
+                    @if($rep->attachments->isNotEmpty())
+                        <div class="mt-2">
+                            <div class="small fw-semibold mb-2">Resolution photos</div>
+                            <div class="report-photo-grid">
+                                @foreach($rep->attachments as $photo)
+                                    <a href="{{ asset('storage/'.$photo->file_path) }}" target="_blank" class="report-photo-link" title="{{ $photo->original_name }}">
+                                        <img src="{{ asset('storage/'.$photo->file_path) }}" alt="{{ $photo->original_name }}" class="report-photo-thumb">
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
                     <p class="small text-muted mb-0">Submitted {{ $rep->date_submitted?->toDateTimeString() }} by {{ $rep->submitter->name ?? '—' }}</p>
                 </div>
             </div>
@@ -161,3 +242,27 @@
     <a href="{{ route('incidents.index') }}" class="btn btn-outline-secondary">Back to list</a>
 </div>
 @endsection
+
+@if($incident->latitude && $incident->longitude)
+    @push('styles')
+        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    @endpush
+
+    @push('scripts')
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            (() => {
+                const lat = Number(@json($incident->latitude));
+                const lng = Number(@json($incident->longitude));
+                const map = L.map('incidentMapView', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 15);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                L.marker([lat, lng]).addTo(map)
+                    .bindPopup(@json($incident->location))
+                    .openPopup();
+            })();
+        </script>
+    @endpush
+@endif

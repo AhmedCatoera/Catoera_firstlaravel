@@ -12,6 +12,11 @@ class AssignmentController extends Controller
 {
     public function store(Request $request, Incident $incident): RedirectResponse
     {
+        $canAssign = $request->user()->isAdmin() || $request->user()->isDispatcher();
+        if (! $canAssign) {
+            return redirect()->route('incidents.index')->with('error', 'Only admin or dispatcher can assign teams.');
+        }
+
         if ($incident->status !== Incident::STATUS_PENDING) {
             return back()->withErrors(['team_id' => 'Only pending incidents can be assigned.']);
         }
@@ -34,6 +39,15 @@ class AssignmentController extends Controller
 
         $incident->update(['status' => Incident::STATUS_ASSIGNED]);
         $team->update(['availability_status' => 'deployed']);
+        $incident->logActivity(
+            event: 'team_assigned',
+            details: 'Team '.$team->team_name.' deployed to incident.',
+            userId: $request->user()->id,
+            meta: [
+                'team_id' => $team->id,
+                'team_name' => $team->team_name,
+            ],
+        );
 
         return redirect()->route('incidents.show', $incident)
             ->with('success', 'Team assigned. Incident status: Assigned.');

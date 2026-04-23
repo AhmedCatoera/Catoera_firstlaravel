@@ -15,7 +15,7 @@
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('incidents.index') || request()->routeIs('incidents.show') || request()->routeIs('incidents.edit') ? 'active' : '' }}" href="{{ route('incidents.index') }}">Incidents</a>
                 </li>
-                @if($u->isAdmin() || $u->isStaff())
+                @if($u->isAdmin() || $u->isDispatcher())
                     <li class="nav-item">
                         <a class="nav-link {{ request()->routeIs('incidents.create') ? 'active' : '' }}" href="{{ route('incidents.create') }}">Create Incident</a>
                     </li>
@@ -30,6 +30,9 @@
                 @endif
                 <li class="nav-item">
                     <a class="nav-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">Reports</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {{ request()->routeIs('operations.board') ? 'active' : '' }}" href="{{ route('operations.board') }}">Live Board</a>
                 </li>
             </ul>
             <ul class="navbar-nav ms-auto">

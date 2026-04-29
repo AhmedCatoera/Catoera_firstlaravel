@@ -22,6 +22,18 @@
                     </select>
                 </div>
                 <div class="col-lg-6">
+                    <label for="verification_status" class="form-label">Verification status</label>
+                    @php
+                        $vsLabels = \App\Models\Incident::verificationStatusLabels();
+                        $vs = old('verification_status', $incident->verification_status ?? 'unverified');
+                    @endphp
+                    <select name="verification_status" id="verification_status" class="form-select">
+                        @foreach($vsLabels as $key => $label)
+                            <option value="{{ $key }}" @selected($vs === $key)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-6">
                     <label for="location" class="form-label">Location summary</label>
                     <input type="text" name="location" id="location" class="form-control" value="{{ old('location', $incident->location) }}" required>
                 </div>
@@ -40,6 +52,57 @@
                 <div class="col-12">
                     <label for="description" class="form-label">Description</label>
                     <textarea name="description" id="description" class="form-control" rows="4" required>{{ old('description', $incident->description) }}</textarea>
+                </div>
+                <div class="col-lg-6">
+                    <label for="caller_name" class="form-label">Caller name (optional)</label>
+                    <input type="text" name="caller_name" id="caller_name" class="form-control" value="{{ old('caller_name', $incident->caller_name) }}">
+                </div>
+                <div class="col-lg-6">
+                    <label for="caller_phone" class="form-label">Caller phone (optional)</label>
+                    <input type="text" name="caller_phone" id="caller_phone" class="form-control" value="{{ old('caller_phone', $incident->caller_phone) }}">
+                </div>
+                <div class="col-lg-6">
+                    <label for="caller_relation" class="form-label">Caller relation (optional)</label>
+                    @php
+                        $crLabels = \App\Models\Incident::callerRelationLabels();
+                        $cr = old('caller_relation', $incident->caller_relation);
+                    @endphp
+                    <select name="caller_relation" id="caller_relation" class="form-select">
+                        <option value="">—</option>
+                        @foreach($crLabels as $key => $label)
+                            <option value="{{ $key }}" @selected($cr === $key)>{{ $label }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="col-lg-6">
+                    <label for="confidence_score" class="form-label">Confidence score (optional)</label>
+                    <select name="confidence_score" id="confidence_score" class="form-select">
+                        <option value="">—</option>
+                        @for($i = 1; $i <= 5; $i++)
+                            <option value="{{ $i }}" @selected((string) old('confidence_score', $incident->confidence_score) === (string) $i)>{{ $i }} / 5</option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Verification sources (optional)</label>
+                    @php
+                        $srcLabels = \App\Models\Incident::verificationSourceLabels();
+                        $sources = old('verification_sources', $incident->verification_sources ?? []);
+                    @endphp
+                    <div class="row g-2">
+                        @foreach($srcLabels as $key => $label)
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="verification_sources[]" value="{{ $key }}" id="src_{{ $key }}" @checked(in_array($key, $sources, true))>
+                                    <label class="form-check-label" for="src_{{ $key }}">{{ $label }}</label>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label for="verification_notes" class="form-label">Verification notes (optional)</label>
+                    <textarea name="verification_notes" id="verification_notes" class="form-control" rows="3">{{ old('verification_notes', $incident->verification_notes) }}</textarea>
                 </div>
             </div>
             <div class="mt-4 d-flex flex-wrap gap-2">

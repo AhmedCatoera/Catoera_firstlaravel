@@ -76,10 +76,19 @@ class IncidentController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'description' => ['required', 'string'],
+            'caller_name' => ['nullable', 'string', 'max:120'],
+            'caller_phone' => ['nullable', 'string', 'max:40'],
+            'caller_relation' => ['nullable', 'in:'.implode(',', array_keys(Incident::callerRelationLabels()))],
+            'verification_status' => ['nullable', 'in:'.implode(',', array_keys(Incident::verificationStatusLabels()))],
+            'verification_sources' => ['nullable', 'array'],
+            'verification_sources.*' => ['in:'.implode(',', array_keys(Incident::verificationSourceLabels()))],
+            'verification_notes' => ['nullable', 'string', 'max:5000'],
+            'confidence_score' => ['nullable', 'integer', 'min:1', 'max:5'],
         ]);
 
         $incident = Incident::create([
             ...$data,
+            'verification_status' => $data['verification_status'] ?? 'unverified',
             'status' => Incident::STATUS_PENDING,
             'date_reported' => now(),
             'created_by' => $request->user()->id,
@@ -91,6 +100,7 @@ class IncidentController extends Controller
             meta: [
                 'incident_type' => $incident->incident_type,
                 'location' => $incident->location,
+                'verification_status' => $incident->verification_status,
             ],
         );
 
@@ -183,6 +193,14 @@ class IncidentController extends Controller
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'description' => ['required', 'string'],
+            'caller_name' => ['nullable', 'string', 'max:120'],
+            'caller_phone' => ['nullable', 'string', 'max:40'],
+            'caller_relation' => ['nullable', 'in:'.implode(',', array_keys(Incident::callerRelationLabels()))],
+            'verification_status' => ['nullable', 'in:'.implode(',', array_keys(Incident::verificationStatusLabels()))],
+            'verification_sources' => ['nullable', 'array'],
+            'verification_sources.*' => ['in:'.implode(',', array_keys(Incident::verificationSourceLabels()))],
+            'verification_notes' => ['nullable', 'string', 'max:5000'],
+            'confidence_score' => ['nullable', 'integer', 'min:1', 'max:5'],
         ]);
 
         $incident->update($data);

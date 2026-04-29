@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Str;
 
 class Incident extends Model
 {
@@ -55,6 +56,13 @@ class Incident extends Model
         'latitude',
         'longitude',
         'description',
+        'caller_name',
+        'caller_phone',
+        'caller_relation',
+        'verification_status',
+        'verification_sources',
+        'verification_notes',
+        'confidence_score',
         'date_reported',
         'status',
         'notes',
@@ -75,7 +83,93 @@ class Incident extends Model
             'on_scene_at' => 'datetime',
             'resolved_at' => 'datetime',
             'closed_at' => 'datetime',
+            'verification_sources' => 'array',
+            'confidence_score' => 'integer',
         ];
+    }
+
+    public static function verificationStatusLabels(): array
+    {
+        return [
+            'unverified' => 'Unverified',
+            'pending_callback' => 'Pending Callback',
+            'partially_verified' => 'Partially Verified',
+            'verified' => 'Verified',
+            'false_report' => 'False Report',
+        ];
+    }
+
+    public static function verificationSourceLabels(): array
+    {
+        return [
+            'caller' => 'Caller',
+            'callback' => 'Callback confirmed',
+            'cctv' => 'CCTV',
+            'security' => 'Security/Guard',
+            'police' => 'Police',
+            'unit_on_scene' => 'Unit on scene',
+            'other' => 'Other',
+        ];
+    }
+
+    public static function callerRelationLabels(): array
+    {
+        return [
+            'witness' => 'Witness',
+            'victim' => 'Victim',
+            'relative' => 'Relative',
+            'bystander' => 'Bystander',
+            'anonymous' => 'Anonymous',
+            'unknown' => 'Unknown',
+        ];
+    }
+
+    public function canViewCallerPii(?User $user = null): bool
+    {
+        $user ??= auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        return $user->isAdmin() || $user->isDispatcher();
+    }
+
+    public function maskedCallerPhone(): ?string
+    {
+        if (! $this->caller_phone) {
+            return null;
+        }
+
+        $digits = preg_replace('/\D+/', '', (string) $this->caller_phone);
+        if (! $digits) {
+            return 'Withheld';
+        }
+        if (strlen($digits) <= 4) {
+            return str_repeat('*', max(0, strlen($digits) - 1)).substr($digits, -1);
+        }
+
+        return substr($digits, 0, 2).str_repeat('*', max(0, strlen($digits) - 4)).substr($digits, -2);
+    }
+
+    public function maskedCallerName(): ?string
+    {
+        if (! $this->caller_name) {
+            return null;
+        }
+
+        $name = trim((string) $this->caller_name);
+        if ($name === '') {
+            return null;
+        }
+
+        $parts = preg_split('/\s+/', $name) ?: [];
+        $first = $parts[0] ?? '';
+        $last = $parts[1] ?? '';
+        if ($first && $last) {
+            return Str::title($first).' '.Str::upper(Str::substr($last, 0, 1)).'.';
+        }
+
+        return Str::title($first);
     }
 
     protected static function booted(): void

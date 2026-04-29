@@ -22,6 +22,34 @@
     <div class="section">
         <table>
             <tr><th>Incident Type</th><td>{{ $incident->incident_type }}</td></tr>
+            <tr>
+                <th>Verification</th>
+                <td>
+                    {{ \App\Models\Incident::verificationStatusLabels()[$incident->verification_status] ?? ($incident->verification_status ?? '—') }}
+                    @if($incident->confidence_score)
+                        ({{ (int) $incident->confidence_score }}/5)
+                    @endif
+                </td>
+            </tr>
+            @php
+                $u = auth()->user();
+                $canSeePii = $incident->canViewCallerPii($u);
+                $callerName = $canSeePii ? $incident->caller_name : $incident->maskedCallerName();
+                $callerPhone = $canSeePii ? $incident->caller_phone : $incident->maskedCallerPhone();
+            @endphp
+            <tr><th>Caller</th><td>{{ $callerName ?: '—' }}@if($callerPhone) · {{ $callerPhone }}@endif</td></tr>
+            <tr><th>Caller relation</th><td>{{ $incident->caller_relation ? (\App\Models\Incident::callerRelationLabels()[$incident->caller_relation] ?? $incident->caller_relation) : '—' }}</td></tr>
+            <tr>
+                <th>Verification sources</th>
+                <td>
+                    @php
+                        $labels = \App\Models\Incident::verificationSourceLabels();
+                        $list = $incident->verification_sources ? collect($incident->verification_sources)->map(fn ($k) => $labels[$k] ?? $k)->values()->all() : [];
+                    @endphp
+                    {{ $list ? implode(', ', $list) : '—' }}
+                </td>
+            </tr>
+            <tr><th>Verification notes</th><td>{{ $incident->verification_notes ?: '—' }}</td></tr>
             <tr><th>Location</th><td>{{ $incident->location }}</td></tr>
             <tr><th>Coordinates</th><td>{{ $incident->latitude ? number_format($incident->latitude, 7).', '.number_format($incident->longitude, 7) : 'Not captured' }}</td></tr>
             <tr><th>Reported</th><td>{{ $incident->date_reported?->toDateTimeString() ?? '—' }}</td></tr>

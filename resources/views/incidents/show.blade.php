@@ -29,9 +29,46 @@
                 <dl class="row mb-0 small">
                     <dt class="col-sm-3">Type</dt><dd class="col-sm-9">{{ $incident->incident_type }}</dd>
                     <dt class="col-sm-3">Status</dt><dd class="col-sm-9">{{ $statusLabels[$incident->status] ?? $incident->status }}</dd>
+                    <dt class="col-sm-3">Verification</dt>
+                    <dd class="col-sm-9">
+                        {{ \App\Models\Incident::verificationStatusLabels()[$incident->verification_status] ?? ($incident->verification_status ?? '—') }}
+                        @if($incident->confidence_score)
+                            <span class="text-muted">({{ (int) $incident->confidence_score }}/5)</span>
+                        @endif
+                    </dd>
+                    <dt class="col-sm-3">Caller</dt>
+                    <dd class="col-sm-9">
+                        @php
+                            $canSeePii = $incident->canViewCallerPii($u);
+                            $callerName = $canSeePii ? $incident->caller_name : $incident->maskedCallerName();
+                            $callerPhone = $canSeePii ? $incident->caller_phone : $incident->maskedCallerPhone();
+                        @endphp
+                        {{ $callerName ?: '—' }}
+                        @if($callerPhone)
+                            <span class="text-muted">· {{ $callerPhone }}</span>
+                        @endif
+                        @if($incident->caller_relation)
+                            <span class="text-muted">· {{ \App\Models\Incident::callerRelationLabels()[$incident->caller_relation] ?? $incident->caller_relation }}</span>
+                        @endif
+                    </dd>
                     <dt class="col-sm-3">Location</dt><dd class="col-sm-9">{{ $incident->location }}</dd>
                     <dt class="col-sm-3">Coordinates</dt><dd class="col-sm-9">{{ $incident->latitude ? number_format($incident->latitude, 7).', '.number_format($incident->longitude, 7) : 'Not captured' }}</dd>
                     <dt class="col-sm-3">Description</dt><dd class="col-sm-9">{{ $incident->description }}</dd>
+                    @if($incident->verification_sources || $incident->verification_notes)
+                        <dt class="col-sm-3">Verification notes</dt>
+                        <dd class="col-sm-9">
+                            @if($incident->verification_sources)
+                                @php
+                                    $labels = \App\Models\Incident::verificationSourceLabels();
+                                    $list = collect($incident->verification_sources)->map(fn ($k) => $labels[$k] ?? $k)->values();
+                                @endphp
+                                <div><strong>Sources:</strong> {{ $list->join(', ') }}</div>
+                            @endif
+                            @if($incident->verification_notes)
+                                <div style="white-space: pre-line;">{{ $incident->verification_notes }}</div>
+                            @endif
+                        </dd>
+                    @endif
                 </dl>
             </div>
         </div>
